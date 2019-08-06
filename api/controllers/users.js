@@ -9,7 +9,7 @@ const { JWT_KEY, PROPIC_URL } = require('../config/config');
 const User = require("../models/user");
 const Media = require("../models/media");
 
-exports.test = (req, res, next) => {
+exports.test = (req, res) => {
     res.status(200).json({
         message: 'Hello World!'
     });
