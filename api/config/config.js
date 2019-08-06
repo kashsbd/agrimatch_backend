@@ -18,6 +18,8 @@ const BASE_PATH = os.homedir() + '/AgriMatch/';
 
 const CROP_PIC_URL = BASE_PATH + 'CropsPics/';
 
+const GPA_CERT_URL = BASE_PATH + 'GpaCertPics/';
+
 const PROPIC_URL = BASE_PATH + 'UserProPics/';
 
 module.exports = {
@@ -25,5 +27,6 @@ module.exports = {
     SERVER_URL,
     JWT_KEY,
     CROP_PIC_URL,
-    PROPIC_URL
+    PROPIC_URL,
+    GPA_CERT_URL
 };

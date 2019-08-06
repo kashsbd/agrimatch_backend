@@ -17,15 +17,16 @@ const userSchema = new Schema(
             required: true
         },
         //detail info
-        name: {
-            type: String,
-            required: [true, 'User name is required.']
-        },
+        userType: String, // may be one of FARMER and MIDDLEMAN
+        name: String,
         phno: String,
         //profile pic info
         profile: { type: Schema.Types.ObjectId, ref: 'Media' },
+        //GPA Cert No: only save if userType is FARMER
+        gpaCertNo: String,
+        gpaCertPic: { type: Schema.Types.ObjectId, ref: 'Media' },
+        //other info
         isUserActive: { type: Boolean, default: true }, // to check if this account exists or not
-        createdBy: { type: Schema.Types.ObjectId, ref: 'User' }
     },
     {
         timestamps: true

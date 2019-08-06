@@ -3,13 +3,14 @@ const multer = require('multer');
 const router = express.Router();
 
 const UserController = require('../controllers/users');
-const { PROPIC_URL } = require('../config/config');
+const { PROPIC_URL, GPA_CERT_URL } = require('../config/config');
 const checkAuth = require('../middlewares/check-auth');
 
 const storage = multer.diskStorage(
     {
         destination: function (req, file, cb) {
-            cb(null, PROPIC_URL);
+            const picPath = file.fieldname === 'proPic' ? PROPIC_URL : GPA_CERT_URL;
+            cb(null, picPath);
         },
         filename: function (req, file, cb) {
             cb(null, Date.now() + '-' + file.originalname);
@@ -36,16 +37,16 @@ const upload = multer(
     }
 );
 
+const cpUpload = upload.fields([{ name: 'proPic', maxCount: 1 }, { name: 'gpaCertPic', maxCount: 1 }]);
+
 router.get('/test', UserController.test);
 
-router.post('/', checkAuth, upload.single('propic'), UserController.create_new_user);
+router.post('/checkEmail', UserController.check_email);
 
-router.post('/signup', upload.single('propic'), UserController.user_signup);
+router.post('/signup', cpUpload, UserController.user_signup);
 
 router.post('/login', UserController.user_login);
 
 router.get('/:userId/profile_pic', UserController.get_profile_pic);
-
-router.post('/:userId/logout', UserController.user_logout);
 
 module.exports = router;

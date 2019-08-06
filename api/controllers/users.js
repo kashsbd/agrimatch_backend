@@ -15,157 +15,136 @@ exports.test = (req, res, next) => {
     });
 }
 
-exports.create_new_user = async (req, res, next) => {
-    const propic_file = req.file;
-    const users = await User.find({ email: req.body.email }).exec();
+exports.check_email = async (req, res) => {
 
-    if (users && users.length >= 1) {
-        return res.status(409).json({
-            message: "Mail exists"
-        });
-    } else {
-        // init user model 
-        const user = new User(
-            {
-                _id: new mongoose.Types.ObjectId(),
-                email: req.body.email,
-                password: req.body.password,
-                name: req.body.name,
-                role: req.body.role,
-                createdBy: req.body.userId
-            }
-        );
+    const {
+        email,
+        userType,
+    } = req.body;
 
-        //check propic_file is not falsely 
-        if (propic_file) {
-            //init media model
-            const media_model = new Media(
-                {
-                    _id: new mongoose.Types.ObjectId(),
-                    type: 'PROFILE'
-                }
-            );
-            //get metadata of propic
-            const pic = await sharp(propic_file.path).metadata();
-            //get image metadata 
-            media_model.width = pic.width;
-            media_model.height = pic.height;
-            media_model.contentType = propic_file.mimetype;
-            media_model.mediaUrl = propic_file.filename;
+    try {
+        const users = await User.find({ email, userType }).exec();
 
-            //finally save media model and push media id to user model
-            const rnMedia = await media_model.save();
-            user.profile = rnMedia._id;
+        if (users && users.length >= 1) {
+            return res.status(409).json({ message: "Mail exists" });
         }
 
-        try {
-            await user.save();
+        return res.status(200).json({ message: "OK" });
 
-            return res.status(201).json({
-                message: 'OK'
-            });
-
-        } catch (err) {
-
-            return res.status(500).json({
-                error: err
-            })
-        }
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error });
     }
 }
 
-exports.user_signup = async (req, res, next) => {
-    const propic_file = req.file;
-    const users = await User.find({ email: req.body.email }).exec();
+exports.user_signup = async (req, res) => {
+    const propic_file = req.files['proPic'][0];
+    const gpa_cert_file = req.files['gpaCertPic'][0];
 
-    if (users && users.length >= 1) {
-        return res.status(409).json({
-            message: "Mail exists"
-        });
-    } else {
-        // init user model 
-        const user = new User(
+    const {
+        email,
+        userType,
+        password,
+        name,
+        phno,
+        gpaCertNo
+    } = req.body;
+
+    // init user model 
+    const user = new User(
+        {
+            _id: new mongoose.Types.ObjectId(),
+            email,
+            password,
+            name,
+            phno,
+            userType
+        }
+    );
+
+    if ((userType === 'FARMER') && (gpaCertNo !== undefined) && (gpaCertNo.trim().length > 0)) {
+        user.gpaCertNo = gpaCertNo;
+    }
+
+    if ((userType === 'FARMER') && (gpa_cert_file !== undefined)) {
+        //init gpa media model
+        const gpa_media_model = new Media(
             {
-                _id: new mongoose.Types.ObjectId(),
-                email: req.body.email,
-                password: req.body.password,
-                name: req.body.name,
-                role: req.body.role,
-                playerIds: [{ playerId: req.body.playerId, status: 'active' }]
+                _id: new mongoose.Types.ObjectId()
             }
         );
+        //get metadata of gpa cert pic
+        const pic = await sharp(gpa_cert_file.path).metadata();
+        //get image metadata 
+        gpa_media_model.width = pic.width;
+        gpa_media_model.height = pic.height;
+        gpa_media_model.contentType = gpa_cert_file.mimetype;
+        gpa_media_model.name = gpa_cert_file.filename;
 
-        //check propic_file is not falsely 
-        if (propic_file) {
-            //init media model
-            const media_model = new Media(
-                {
-                    _id: new mongoose.Types.ObjectId()
-                }
-            );
-            //get metadata of propic
-            const pic = await sharp(propic_file.path).metadata();
-            //get image metadata 
-            media_model.width = pic.width;
-            media_model.height = pic.height;
-            media_model.contentType = propic_file.mimetype;
-            media_model.mediaUrl = propic_file.filename;
+        //finally save media model and push media id to user model
+        const rnMedia = await gpa_media_model.save();
+        user.gpaCertPic = rnMedia._id;
+    }
 
-            //finally save media model and push media id to user model
-            const rnMedia = await media_model.save();
-            user.profile = rnMedia._id;
-        }
+    //check propic_file is not falsely 
+    if (propic_file) {
+        //init media model
+        const media_model = new Media(
+            {
+                _id: new mongoose.Types.ObjectId()
+            }
+        );
+        //get metadata of propic
+        const pic = await sharp(propic_file.path).metadata();
+        //get image metadata 
+        media_model.width = pic.width;
+        media_model.height = pic.height;
+        media_model.contentType = propic_file.mimetype;
+        media_model.name = propic_file.filename;
 
-        try {
-            const result = await user.save();
-            //generate token for new user
-            const token = jwt.sign(
-                {
-                    email: result.email,
-                    userId: result._id
-                },
-                JWT_KEY
-            );
+        //finally save media model and push media id to user model
+        const rnMedia = await media_model.save();
+        user.profile = rnMedia._id;
+    }
 
-            return res.status(201).json({
-                token: token,
-                userId: result._id,
-                role: result.role
-            });
-        } catch (err) {
-            return res.status(500).json({
-                error: err
-            })
-        }
+    try {
+        const result = await user.save();
+        //generate token for new user
+        const token = jwt.sign(
+            {
+                email: result.email,
+                userId: result._id
+            },
+            JWT_KEY
+        );
+
+        return res.status(201).json({
+            token: token,
+            userId: result._id,
+            name: result.name,
+            userType: result.userType
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error });
     }
 }
 
 exports.user_login = async (req, res, next) => {
-    const playerId = req.body.playerId;
+
+    const {
+        email,
+        userType,
+        password
+    } = req.body;
 
     try {
-        let users = await User.find({ email: req.body.email, password: req.body.password }).exec();
-        console.log(users);
+        const users = await User.find({ email, password, userType }).exec();
 
         if (users && users.length < 1) {
-            return res.status(401).json({
-                message: "Auth failed"
-            });
+            return res.status(401).json({ message: "Auth failed" });
         }
-
-        //check playerId not to duplicate
-        let ids = Object.assign([], users[0].playerIds);
-        const index = _.findIndex(ids, { playerId });
-        if (index > -1) {
-            ids[index] = { playerId, status: 'active' };
-        } else {
-            ids.push({ playerId, status: 'active' });
-        }
-
-        users[0].playerIds = ids;
-
-        await users[0].save();
-
 
         // generate token for logged user
         const token = jwt.sign(
@@ -179,87 +158,48 @@ exports.user_login = async (req, res, next) => {
         return res.status(200).json(
             {
                 token: token,
-                userName: users[0].name,
+                name: users[0].name,
                 userId: users[0]._id,
-                role: users[0].role
+                userType: users[0].userType
             }
         );
 
-    } catch (err) {
-        res.status(500).json({
-            error: err
-        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error });
     }
 }
 
-exports.user_logout = async (req, res, next) => {
-    const userId = req.params.userId;
-    const playerId = req.body.playerId;
-
-    try {
-        let user = await User.findById(userId);
-        if (user) {
-            let playerIds = Object.assign([], user.playerIds);
-            const index = _.findIndex(playerIds, { playerId });
-            if (index !== -1) {
-                playerIds.splice(index, 1);
-                //set new playerIds
-                user.playerIds = playerIds;
-            }
-
-            //finally save user model
-            await user.save();
-
-            return res.status(200).json({
-                message: 'User is logged out !'
-            });
-        } else {
-            return res.status(404).json({
-                message: "No valid entry found for provided user id"
-            });
-        }
-    } catch (err) {
-        return res.status(500).json({
-            error: err
-        });
-    }
-}
-
-
-exports.get_profile_pic = async (req, res, next) => {
+exports.get_profile_pic = async (req, res) => {
     const userId = req.params.userId;
 
     try {
-        const user = await User.findById(userId);
+        const user = await User.findById(userId).exec();
+
         if (user) {
             try {
-                const propic = await Media.findById(user.profile);
+                const propic = await Media.findById(user.profile).exec();
+
                 if (propic) {
-                    const propicUrl = PROPIC_URL + propic.mediaUrl;
+                    const propicUrl = PROPIC_URL + propic.name;
                     try {
                         const file = await readFilePromise(propicUrl);
                         return res.status(200).send(file);
                     } catch (error) {
-                        return res.status(404).json({
-                            message: "No such file"
-                        });
+                        return res.status(404).json({ message: "No such file" });
                     }
                 }
 
-                return res.status(404).json({
-                    message: "No valid entry found for provided ID"
-                });
+                return res.status(404).json({ message: "No valid entry found for provided image id." });
 
-            } catch (err) {
-                return res.status(404).json({
-                    message: 'No such file'
-                });
+            } catch (error) {
+                console.log(error);
+                return res.status(500).json({ error });
             }
         }
-    } catch (err) {
-        return res.status(500).json({
-            error: err
-        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error });
     }
 }
 
