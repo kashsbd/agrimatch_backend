@@ -27,6 +27,9 @@ const userSchema = new Schema(
         gpaCertPic: { type: Schema.Types.ObjectId, ref: 'Media' },
         //other info
         isUserActive: { type: Boolean, default: true }, // to check if this account exists or not
+        //location of user
+        lat: String,
+        lng: String
     },
     {
         timestamps: true
