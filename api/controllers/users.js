@@ -38,8 +38,8 @@ exports.check_email = async (req, res) => {
 }
 
 exports.user_signup = async (req, res) => {
-    const propic_file = req.files['proPic'][0];
-    const gpa_cert_file = req.files['gpaCertPic'][0];
+    const propic_file = req.files['proPic'] && req.files['proPic'].length > 0 ? req.files['proPic'][0] : undefined;
+    const gpa_cert_file = req.files['gpaCertPic'] && req.files['gpaCertPic'].length > 0 ? req.files['gpaCertPic'][0] : undefined;
 
     const {
         email,
