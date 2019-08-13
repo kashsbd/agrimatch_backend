@@ -15,6 +15,20 @@ exports.test = (req, res) => {
     });
 }
 
+exports.get_user_count = async (req, res) => {
+    const { userType } = req.query;
+
+    try {
+        const users = await User.find({ userType }).exec();
+
+        return res.status(200).json({ user_count: users.length });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error });
+    }
+}
+
 exports.check_email = async (req, res) => {
 
     const {
