@@ -8,6 +8,7 @@ const { JWT_KEY, PROPIC_URL } = require('../config/config');
 
 const User = require("../models/user");
 const Media = require("../models/media");
+const Location = require("../models/location");
 
 exports.test = (req, res) => {
     res.status(200).json({
@@ -61,7 +62,9 @@ exports.user_signup = async (req, res) => {
         password,
         name,
         phno,
-        gpaCertNo
+        gpaCertNo,
+        lng,
+        lat
     } = req.body;
 
     // init user model 
@@ -123,6 +126,21 @@ exports.user_signup = async (req, res) => {
 
     try {
         const result = await user.save();
+
+        if ((lng !== undefined) && (lat !== undefined)) {
+            const location = { type: 'Point', coordinates: [lng, lat] };
+            //init location model
+            const location_model = new Location(
+                {
+                    _id: new mongoose.Types.ObjectId(),
+                    location,
+                    chatType: 'SINGLE',
+                    user: result._id
+                }
+            );
+
+            const rnLocation = await location_model.save();
+        }
         //generate token for new user
         const token = jwt.sign(
             {
@@ -185,7 +203,7 @@ exports.user_login = async (req, res, next) => {
 }
 
 exports.get_profile_pic = async (req, res) => {
-    const userId = req.params.userId;
+    const userId = req.params.id;
 
     try {
         const user = await User.findById(userId).exec();
@@ -216,5 +234,6 @@ exports.get_profile_pic = async (req, res) => {
         return res.status(500).json({ error });
     }
 }
+
 
 

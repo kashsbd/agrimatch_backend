@@ -6,7 +6,8 @@ const mongoose = require("mongoose");
 
 const config = require('./api/config/config');
 const userRouter = require('./api/routes/users');
-const postRouter = require('./api/routes/posts');
+const cropRouter = require('./api/routes/crops');
+const locationRouter = require('./api/routes/locations');
 
 //db config
 mongoose.Promise = global.Promise;
@@ -38,7 +39,8 @@ app.use(bodyParser.json());
 
 //app routes
 app.use('/users', userRouter);
-app.use('/posts', postRouter);
+app.use('/crops', cropRouter);
+app.use('/locations', locationRouter);
 
 app.use((req, res, next) => {
     const error = new Error("Not found");

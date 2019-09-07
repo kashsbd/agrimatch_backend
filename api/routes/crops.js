@@ -2,9 +2,8 @@ const express = require('express');
 const multer = require('multer');
 const router = express.Router();
 
-const PostController = require('../controllers/posts');
+const CropController = require('../controllers/crops');
 const checkAuth = require('../middlewares/check-auth');
-const cache = require('../middlewares/cache-service');
 const { CROP_PIC_URL } = require('../config/config');
 
 const storage = multer.diskStorage(
@@ -37,18 +36,13 @@ const upload = multer(
     }
 );
 
-//get all posts
-router.get('/getAllPosts', checkAuth, cache(10), PostController.get_all_posts);
-
-//create new post
-router.post('/', checkAuth, upload.array('cropImage'), PostController.create_post);
-//get post by id
-router.get('/:postId', checkAuth, PostController.get_post_by_id);
-
+//get all crops
+router.get('/', checkAuth, CropController.get_all_crops);
+//get crop by id
+router.get('/:id', checkAuth, CropController.get_crop_by_id);
+//create crop
+router.post('/', checkAuth, upload.array('cropImage'), CropController.create_crop);
 //get photo by media id
-router.get('/media/:mediaId/:type', PostController.get_photo);
-
-//delete post
-router.post('/:postId/delete', checkAuth, PostController.delete_post);
+router.get('/media/:id/:type', CropController.get_photo);
 
 module.exports = router;

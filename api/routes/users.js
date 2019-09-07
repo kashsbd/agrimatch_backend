@@ -47,7 +47,7 @@ router.post('/signup', cpUpload, UserController.user_signup);
 
 router.post('/login', UserController.user_login);
 
-router.get('/:userId/profile_pic', UserController.get_profile_pic);
+router.get('/:id/profile_pic', UserController.get_profile_pic);
 
 router.get('/getUserCount', checkAuth, UserController.get_user_count);
 
