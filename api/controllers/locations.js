@@ -1,40 +1,34 @@
 const mongoose = require('mongoose');
 
-const Location = require("../models/location");
-const User = require("../models/user");
+const Location = require('../models/location');
 
 exports.get_near_me = async (req, res) => {
+	const { userType, lng, lat } = req.query;
 
-    const {
-        userType,
-        lng,
-        lat
-    } = req.query;
+	const locQuery = {
+		$near: {
+			$maxDistance: 1000, // in meter ** 1000 metre = 0.621371 mile
+			$geometry: {
+				type: 'Point',
+				coordinates: [parseFloat(lng), parseFloat(lat)],
+			},
+		},
+	};
 
-    const locQuery = {
-        $near: {
-            $maxDistance: 500, // in meter
-            $geometry: {
-                type: "Point",
-                coordinates: [lng, lat]
-            },
-        }
-    }
+	const query = {
+		location: locQuery,
+	};
 
-    const query = {
-        location: locQuery,
-        'user.userType': userType
-    }
+	try {
+		let locations = await Location.find(query)
+			.populate('user', 'name userType phno profile rateCount totalRateValue', 'User', { userType })
+			.exec();
 
-    try {
-        const locations = await Location.find(query)
-            .populate('user', 'name userType')
-            .exec();
+		locations = locations.filter(loc => loc.user !== null);
 
-        console.log(locations);
-        return res.status(200).send(locations);
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ error });
-    }
-}
+		return res.status(200).send(locations);
+	} catch (error) {
+		console.log(error);
+		return res.status(500).json({ error });
+	}
+};

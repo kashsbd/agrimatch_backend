@@ -6,22 +6,22 @@ const Schema = mongoose.Schema;
 const User = require('./user');
 
 const locationSchema = new Schema(
-    {
-        _id: { type: Schema.Types.ObjectId },
+	{
+		_id: { type: Schema.Types.ObjectId },
 
-        user: { type: Schema.Types.ObjectId, ref: 'User' },
+		user: { type: Schema.Types.ObjectId, ref: 'User' },
 
-        chatType: String, // may be one of SINGLE, GROUP
+		chatType: String, // may be one of SINGLE, GROUP
 
-        location: { type: Schema.Types.Point }
-    },
-    {
-        timestamps: true,
-    }
+		location: { type: Schema.Types.Point },
+	},
+	{
+		timestamps: true,
+	},
 );
 
-locationSchema.index({ location: "2dsphere" });
+locationSchema.index({ location: '2dsphere' });
 
 locationSchema.plugin(mongoosePaginate);
 
-module.exports = mongoose.model('Location', locationSchema);;
+module.exports = mongoose.model('Location', locationSchema);
