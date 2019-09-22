@@ -7,7 +7,7 @@ exports.get_near_me = async (req, res) => {
 
 	const locQuery = {
 		$near: {
-			$maxDistance: 1000, // in meter ** 1000 metre = 0.621371 mile
+			$maxDistance: 482803, // in meter ** 482803 metre = 300 mile
 			$geometry: {
 				type: 'Point',
 				coordinates: [parseFloat(lng), parseFloat(lat)],

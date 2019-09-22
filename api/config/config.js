@@ -4,13 +4,13 @@ const mongo_local_path = 'mongodb://localhost:27017/Agrimatch';
 
 const mongo_atlas_path = 'mongodb://kash:kash123@localhost:27017/Agrimatch';
 
-const MONGO_PATH = mongo_atlas_path;
+const MONGO_PATH = mongo_local_path;
 
 const local = 'http://192.168.8.116:3000/';
 
 const server = 'http://104.197.224.155:3000/';
 
-const SERVER_URL = server;
+const SERVER_URL = local;
 
 const JWT_KEY = 'secure_agrimatch_key';
 
@@ -22,6 +22,8 @@ const GPA_CERT_URL = BASE_PATH + 'GpaCertPics/';
 
 const PROPIC_URL = BASE_PATH + 'UserProPics/';
 
+const FEEDBACK_URL = BASE_PATH + 'FeedBack/';
+
 module.exports = {
 	MONGO_PATH,
 	SERVER_URL,
@@ -29,4 +31,5 @@ module.exports = {
 	CROP_PIC_URL,
 	PROPIC_URL,
 	GPA_CERT_URL,
+	FEEDBACK_URL,
 };
