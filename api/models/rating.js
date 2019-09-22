@@ -3,6 +3,7 @@ const mongoosePaginate = require('mongoose-paginate');
 const Schema = mongoose.Schema;
 
 const User = require('./user');
+const Media = require('./media');
 
 const ratingSchema = new Schema(
 	{
@@ -15,6 +16,8 @@ const ratingSchema = new Schema(
 		value: Number,
 
 		feedback: String,
+
+		feedbackAudio: { type: Schema.Types.ObjectId, ref: 'Media' },
 	},
 	{
 		timestamps: true,

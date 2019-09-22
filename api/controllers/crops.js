@@ -24,10 +24,7 @@ exports.get_all_crops = async (req, res) => {
 	};
 
 	try {
-		const result = await Crop.paginate(
-			{ isAvailable: true, user },
-			options,
-		);
+		const result = await Crop.paginate({ isAvailable: true, user }, options);
 		return res.status(200).send(result);
 	} catch (error) {
 		console.log(error);
@@ -80,11 +77,7 @@ exports.create_crop = async (req, res, next) => {
 			});
 			//check if it is image
 			if (f.mimetype.startsWith('image/')) {
-				const imageName =
-					Date.now() +
-					'_compressed_' +
-					f.originalname.split('.')[0] +
-					'.jpeg';
+				const imageName = Date.now() + '_compressed_' + f.originalname.split('.')[0] + '.jpeg';
 
 				const absolutePath = CROP_PIC_URL + imageName;
 

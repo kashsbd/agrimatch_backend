@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const router = express.Router();
 
 const RatingController = require('../controllers/ratings');
@@ -16,7 +17,7 @@ const storage = multer.diskStorage({
 
 const fileFilter = function(req, file, cb) {
 	const mimeType = file.mimetype;
-	if (mimeType.startsWith('video/')) {
+	if (mimeType.startsWith('audio/')) {
 		return cb(null, true);
 	} else return cb(new Error(mimeType + ' file types are not allowed.'), false);
 };
@@ -30,6 +31,6 @@ const upload = multer({
 });
 
 //save rating
-router.post('/ratings', checkAuth, upload.array('feedback'), RatingController.save_rating);
+router.post('/', checkAuth, upload.array('feedbackAudio'), RatingController.save_rating);
 
 module.exports = router;
