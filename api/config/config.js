@@ -24,6 +24,8 @@ const PROPIC_URL = BASE_PATH + 'UserProPics/';
 
 const FEEDBACK_URL = BASE_PATH + 'FeedBack/';
 
+const CHAT_URL = BASE_PATH + 'ChatPics/';
+
 module.exports = {
 	MONGO_PATH,
 	SERVER_URL,
@@ -32,4 +34,5 @@ module.exports = {
 	PROPIC_URL,
 	GPA_CERT_URL,
 	FEEDBACK_URL,
+	CHAT_URL,
 };

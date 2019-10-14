@@ -11,6 +11,8 @@ const { FEEDBACK_URL } = require('../config/config');
 exports.save_rating = async (req, res) => {
 	const { fromUser, toUser, value, feedback } = req.body;
 
+	console.log(req.body);
+
 	const files = req.files || [];
 
 	try {
@@ -53,7 +55,7 @@ exports.save_rating = async (req, res) => {
 
 			await ratingModel.save();
 
-			await User.update({ _id: fromUser }, { $inc: { rateCount: 1, totalRateValue: value } });
+			await User.update({ _id: toUser }, { $inc: { rateCount: 1, totalRateValue: value } });
 
 			return res.status(201).json({ msg: 'OK' });
 		}
