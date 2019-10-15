@@ -9,6 +9,7 @@ const userRouter = require('./api/routes/users');
 const cropRouter = require('./api/routes/crops');
 const locationRouter = require('./api/routes/locations');
 const ratingRouter = require('./api/routes/ratings');
+const chatRouter = require('./api/routes/chats');
 
 //db config
 mongoose.Promise = global.Promise;
@@ -27,13 +28,13 @@ let app = express();
 let server = require('http').Server(app);
 let io = require('socket.io')(server);
 
-const all_posts_socket = io.of('/all_posts').on('connection', () => {});
+const chat_socket = io.of('/all_chats').on('connection', () => {});
 
 app.use(cors());
 //put socket io to every response object
 app.use((req, res, next) => {
 	//for posts
-	req.all_posts_socket = all_posts_socket;
+	req.chat_socket = chat_socket;
 	next();
 });
 
@@ -46,6 +47,7 @@ app.use('/users', userRouter);
 app.use('/crops', cropRouter);
 app.use('/locations', locationRouter);
 app.use('/ratings', ratingRouter);
+app.use('/chats', chatRouter);
 
 app.use((req, res, next) => {
 	const error = new Error('Not found');
