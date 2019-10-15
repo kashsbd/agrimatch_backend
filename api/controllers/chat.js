@@ -4,9 +4,12 @@ const fs = require('fs');
 const readFilePromise = require('fs-readfile-promise');
 
 const ChatRoom = require('../models/chatroom');
+const ChatMessage = require('../models/message');
 const Media = require('../models/media');
+const User = require('../models/user');
 
 const { CHAT_URL } = require('../config/config');
+const { getPhotoQuality } = require('../utils/calculate-photo-quality');
 
 exports.save_chat = async (req, res) => {
 	const chat_socket = req.chat_socket;
@@ -18,13 +21,13 @@ exports.save_chat = async (req, res) => {
 	let gifted_msg;
 
 	//init chat message model
-	const chat_model = new ChatMessage({ _id: new mongoose.Types.ObjectId() });
-	chat_model.user = fromOwnerId;
-	chat_model.seen_by.push(fromOwnerId);
+	const message_model = new ChatMessage({ _id: new mongoose.Types.ObjectId() });
+	message_model.sender = fromOwnerId;
+	message_model.seenBy.push(fromOwnerId);
 
 	//for text message
 	if (text && text.trim().length > 0) {
-		chat_model.text = text;
+		message_model.text = text;
 	}
 
 	//for chat media
@@ -42,11 +45,11 @@ exports.save_chat = async (req, res) => {
 				media_model.width = gif.width;
 				media_model.height = gif.height;
 				media_model.contentType = chatPicFile.mimetype;
-				media_model.mediaUrl = chatPicFile.filename;
+				media_model.name = chatPicFile.filename;
 			} else {
 				const imageName =
 					Date.now() + '_compressed_' + chatPicFile.originalname.split('.')[0] + '.jpeg';
-				const absolutePath = CHAT_PIC_URL + imageName;
+				const absolutePath = CHAT_URL + imageName;
 				const pic = await sharp(chatPicFile.path)
 					.resize()
 					.jpeg({ quality: getPhotoQuality(chatPicFile.size) })
@@ -55,7 +58,7 @@ exports.save_chat = async (req, res) => {
 				media_model.width = pic.width;
 				media_model.height = pic.height;
 				media_model.contentType = chatPicFile.mimetype;
-				media_model.mediaUrl = imageName;
+				media_model.name = imageName;
 				//finally delete original file
 				fs.unlink(chatPicFile.path, err => {
 					if (err) console.log("Can't delete original file.");
@@ -64,7 +67,7 @@ exports.save_chat = async (req, res) => {
 
 			//finally save media model and push media id to chat model
 			const rnMedia = await media_model.save();
-			chat_model.media = rnMedia._id;
+			message_model.media = rnMedia._id;
 		}
 	}
 
@@ -73,16 +76,16 @@ exports.save_chat = async (req, res) => {
 		const location = JSON.parse(locationData);
 		if (location) {
 			const loc_obj = {
-				lat: location.latitude,
-				lon: location.longitude,
+				type: 'Point',
+				coordinates: [parseFloat(location.longitude), parseFloat(location.latitude)],
 			};
 
-			chat_model.location = loc_obj;
+			message_model.loc = loc_obj;
 		}
 	}
 
 	try {
-		const chatMessage = await chat_model.save();
+		const chatMessage = await message_model.save();
 
 		let fromOwner = await Owner.findById(fromOwnerId).exec();
 
@@ -94,9 +97,9 @@ exports.save_chat = async (req, res) => {
 				await conversation.save();
 
 				gifted_msg = {
-					_id: chat_model._id,
-					text: chat_model.text,
-					createdAt: chat_model.createdAt,
+					_id: message_model._id,
+					text: message_model.text,
+					createdAt: message_model.createdAt,
 					user: { _id: fromOwner._id, name: fromOwner.firstName + ' ' + fromOwner.lastName },
 					meta: { conversation_id: conversationId, toOwnerId },
 				};
@@ -112,9 +115,9 @@ exports.save_chat = async (req, res) => {
 				await conver.save();
 
 				gifted_msg = {
-					_id: chat_model._id,
-					text: chat_model.text,
-					createdAt: chat_model.createdAt,
+					_id: message_model._id,
+					text: message_model.text,
+					createdAt: message_model.createdAt,
 					user: { _id: fromOwner._id, name: fromOwner.firstName + ' ' + fromOwner.lastName },
 					meta: { conversation_id: conver._id, toOwnerId },
 				};
@@ -137,9 +140,9 @@ exports.save_chat = async (req, res) => {
 				await toOwner.save();
 
 				gifted_msg = {
-					_id: chat_model._id,
-					text: chat_model.text,
-					createdAt: chat_model.createdAt,
+					_id: message_model._id,
+					text: message_model.text,
+					createdAt: message_model.createdAt,
 					user: { _id: fromOwner._id, name: fromOwner.firstName + ' ' + fromOwner.lastName },
 					meta: { conversation_id: conversation._id, toOwnerId },
 				};
@@ -149,7 +152,7 @@ exports.save_chat = async (req, res) => {
 		//emits chat message  to chat_socket subscriber
 		chat_socket.emit('chat::created', gifted_msg);
 
-		return res.status(201).send(chat_model);
+		return res.status(201).send(message_model);
 	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ error });
@@ -161,22 +164,24 @@ exports.get_all_messages = async (req, res) => {
 
 	const options = {
 		sort: { createdAt: -1 },
-		select: '-__v',
-		populate: [{ path: 'owner', select: 'firstName lastName' }],
-		page: page,
+		populate: [{ path: 'chatRooms', select: 'roomType participants' }],
 	};
 
 	try {
-		const chatRooms = await ChatRoom.find({ owner: userId }, options).exec();
+		const user = await User.findById(userId, 'chatRooms', options).exec();
 
-		if (chatRooms.length > 0) {
-            for(let i = 0 ; i< chatRooms.length ; i++) {
-                
-            }
-		} else {
+		if (user) {
+			const rooms = user.chatRooms;
+			const roomsLength = rooms.length;
+
+			if (roomsLength > 0) {
+				for (let i = 0; i < roomsLength; i++) {
+					console.length(rooms[i]);
+				}
+			}
 		}
 
-		return res.status(200).json({ chatRooms });
+		return res.status(200).json({ users });
 	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ error });

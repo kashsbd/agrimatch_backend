@@ -1,3 +1,4 @@
+const GeoJSON = require('mongoose-geojson-schema');
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate');
 const Schema = mongoose.Schema;
@@ -18,12 +19,16 @@ const messageSchema = new Schema(
 
 		media: { type: Schema.Types.ObjectId, ref: 'Media' },
 
+		loc: { type: Schema.Types.Point },
+
 		seenBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 	},
 	{
 		timestamps: true,
 	},
 );
+
+messageSchema.index({ loc: '2dsphere' });
 
 messageSchema.plugin(mongoosePaginate);
 

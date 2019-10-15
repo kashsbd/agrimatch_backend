@@ -33,7 +33,7 @@ const chat_socket = io.of('/all_chats').on('connection', () => {});
 app.use(cors());
 //put socket io to every response object
 app.use((req, res, next) => {
-	//for posts
+	//for chatting
 	req.chat_socket = chat_socket;
 	next();
 });

@@ -30,6 +30,9 @@ const userSchema = new Schema(
 		//for rating
 		rateCount: { type: Number, default: 0 },
 		totalRateValue: { type: Number, default: 0 },
+
+		//for chatting
+		chatRooms: [{ type: Schema.Types.ObjectId, ref: 'ChatRoom' }],
 	},
 	{
 		timestamps: true,
