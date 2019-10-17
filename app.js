@@ -25,16 +25,24 @@ mongoose.connect(
 );
 
 let app = express();
+
 let server = require('http').Server(app);
 let io = require('socket.io')(server);
 
 const chat_socket = io.of('/all_chats').on('connection', () => {});
 
 app.use(cors());
+
 //put socket io to every response object
 app.use((req, res, next) => {
 	//for chatting
 	req.chat_socket = chat_socket;
+	next();
+});
+
+app.use((req, res, next) => {
+	res.header('Acess-Control-Allow-Origin', '*');
+	res.header('Acess-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
 	next();
 });
 

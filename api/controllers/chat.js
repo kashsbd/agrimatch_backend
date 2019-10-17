@@ -16,14 +16,16 @@ exports.save_chat = async (req, res) => {
 
 	const chatPicFile = req.file;
 
-	const { fromOwnerId, toOwnerId, text, locationData, conversationId } = req.body;
+	const { fromSenderId, toReceiverId, text, locationData, roomId, roomType } = req.body;
 
 	let gifted_msg;
 
+	let room_id = roomId;
+
 	//init chat message model
 	const message_model = new ChatMessage({ _id: new mongoose.Types.ObjectId() });
-	message_model.sender = fromOwnerId;
-	message_model.seenBy.push(fromOwnerId);
+	message_model.sender = fromSenderId;
+	message_model.seenBy.push(fromSenderId);
 
 	//for text message
 	if (text && text.trim().length > 0) {
@@ -85,68 +87,58 @@ exports.save_chat = async (req, res) => {
 	}
 
 	try {
-		const chatMessage = await message_model.save();
+		let fromSender = await User.findById(fromSenderId).exec();
 
-		let fromOwner = await Owner.findById(fromOwnerId).exec();
+		if (roomId) {
+			let chatRoom = await ChatRoom.findById(roomId).exec();
 
-		if (conversationId) {
-			let conversation = await Conversation.findById(conversationId).exec();
-
-			if (conversation) {
-				conversation.messages.push(chatMessage._id);
-				await conversation.save();
-
-				gifted_msg = {
-					_id: message_model._id,
-					text: message_model.text,
-					createdAt: message_model.createdAt,
-					user: { _id: fromOwner._id, name: fromOwner.firstName + ' ' + fromOwner.lastName },
-					meta: { conversation_id: conversationId, toOwnerId },
-				};
+			if (chatRoom) {
+				room_id = roomId;
 			}
 		} else {
-			const saved_conversations = await Conversation.find({
-				participants: { $all: [fromOwnerId, toOwnerId] },
+			const saved_rooms = await ChatRoom.find({
+				participants: { $all: [fromSenderId, toReceiverId] },
 			});
-			let conver = saved_conversations[0];
 
-			if (conver) {
-				conver.messages.push(chatMessage._id);
-				await conver.save();
+			const room_one = saved_rooms[0];
 
-				gifted_msg = {
-					_id: message_model._id,
-					text: message_model.text,
-					createdAt: message_model.createdAt,
-					user: { _id: fromOwner._id, name: fromOwner.firstName + ' ' + fromOwner.lastName },
-					meta: { conversation_id: conver._id, toOwnerId },
-				};
+			if (room_one) {
+				room_id = room_one._id;
 			} else {
-				//init conversation model
-				let conversation_model = new Conversation({ _id: new mongoose.Types.ObjectId() });
+				//init room model
+				let room_model = new ChatRoom({ _id: new mongoose.Types.ObjectId() });
 
-				conversation_model.participants.push(fromOwnerId);
-				conversation_model.participants.push(toOwnerId);
-				conversation_model.messages.push(chatMessage._id);
+				room_model.participants.push(fromSenderId);
+				room_model.participants.push(toReceiverId);
+				room_model.roomType = roomType;
 
-				const conversation = await conversation_model.save();
+				const saved_room = await room_model.save();
 
-				fromOwner.conversations.push(conversation._id);
-				await fromOwner.save();
+				fromSender.chatRooms.push(saved_room._id);
+				await fromSender.save();
 
-				let toOwner = await Owner.findById(toOwnerId).exec();
+				let toReceiver = await User.findById(toReceiverId).exec();
 
-				toOwner.conversations.push(conversation._id);
-				await toOwner.save();
+				toReceiver.chatRooms.push(saved_room._id);
+				await toReceiver.save();
 
-				gifted_msg = {
-					_id: message_model._id,
-					text: message_model.text,
-					createdAt: message_model.createdAt,
-					user: { _id: fromOwner._id, name: fromOwner.firstName + ' ' + fromOwner.lastName },
-					meta: { conversation_id: conversation._id, toOwnerId },
-				};
+				room_id = saved_room._id;
 			}
+		}
+
+		if (room_id) {
+			message_model.room = roomId;
+			await message_model.save();
+
+			gifted_msg = {
+				_id: message_model._id,
+				text: message_model.message,
+				media: message_model.media,
+				location: message_model.loc,
+				createdAt: message_model.createdAt,
+				user: { _id: fromSender._id, name: fromSender.name },
+				meta: { room_id, toReceiverId },
+			};
 		}
 
 		//emits chat message  to chat_socket subscriber
@@ -159,29 +151,46 @@ exports.save_chat = async (req, res) => {
 	}
 };
 
-exports.get_all_messages = async (req, res) => {
-	const { userId } = req.query;
+exports.get_msgs_of_room = async (req, res) => {
+	const { toReceiverId, fromSenderId, roomType, roomId, page } = req.query;
 
 	const options = {
 		sort: { createdAt: -1 },
-		populate: [{ path: 'chatRooms', select: 'roomType participants' }],
+		select: '-__v',
+		populate: [{ path: 'sender', select: 'name' }],
+		populate: [{ path: 'media', select: 'name contentType' }],
+		page: page,
 	};
 
+	let room_id = roomId;
+
+	let gifted_msgs = [];
+
 	try {
-		const user = await User.findById(userId, 'chatRooms', options).exec();
+		// have to check with string undefined coz roomId is string undefined in req query
+		if (room_id === 'undefined') {
+			const saved_rooms = await ChatRoom.find({
+				participants: { $all: [toReceiverId, fromSenderId] },
+				roomType,
+			});
 
-		if (user) {
-			const rooms = user.chatRooms;
-			const roomsLength = rooms.length;
+			room_id = saved_rooms && saved_rooms[0] ? saved_rooms[0]._id : 'undefined';
+		}
 
-			if (roomsLength > 0) {
-				for (let i = 0; i < roomsLength; i++) {
-					console.length(rooms[i]);
-				}
+		// same as above
+		if (room_id !== 'undefined') {
+			let rnMessages = await ChatMessage.paginate({ room: room_id }, options);
+
+			let messages = JSON.parse(JSON.stringify(rnMessages));
+
+			const msg_length = messages.doc.length;
+
+			for (let i = 0; i < msg_length; i++) {
+				console.log(messages.docs[i]);
 			}
 		}
 
-		return res.status(200).json({ users });
+		return res.status(200).send(gifted_msgs);
 	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ error });
@@ -189,7 +198,7 @@ exports.get_all_messages = async (req, res) => {
 };
 
 exports.get_messages = async (req, res) => {
-	const { conId, toOwnerId, fromOwnerId } = req.body;
+	const { conId, toReceiverId, fromSenderId } = req.body;
 
 	const page = req.query.page || 1;
 
@@ -206,10 +215,10 @@ exports.get_messages = async (req, res) => {
 		if (conId) {
 			conversation = await Conversation.findById(conId);
 		} else {
-			const saved_conversations = await Conversation.find({
-				participants: { $all: [toOwnerId, fromOwnerId] },
+			const saved_rooms = await Conversation.find({
+				participants: { $all: [toReceiverId, fromSenderId] },
 			});
-			conversation = saved_conversations[0];
+			conversation = saved_rooms[0];
 		}
 
 		if (conversation) {

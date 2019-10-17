@@ -9,6 +9,8 @@ const { JWT_KEY, PROPIC_URL } = require('../config/config');
 const User = require('../models/user');
 const Media = require('../models/media');
 const Location = require('../models/location');
+const ChatRoom = require('../models/chatroom');
+const ChatMessage = require('../models/message');
 
 exports.test = (req, res) => {
 	res.status(200).json({
@@ -201,6 +203,52 @@ exports.get_profile_pic = async (req, res) => {
 				return res.status(500).json({ error });
 			}
 		}
+	} catch (error) {
+		console.log(error);
+		return res.status(500).json({ error });
+	}
+};
+
+//get all chat rooms
+exports.get_all_chatrooms = async (req, res) => {
+	const { id } = req.params;
+
+	let all_chatrooms = [];
+
+	try {
+		const user = await User.findById(id).exec();
+
+		if (user) {
+			const rooms = user.chatRooms;
+
+			for (let i = rooms.length; i--; ) {
+				const saved_room = await ChatRoom.findById(rooms[i])
+					.populate('participants', 'name')
+					.exec();
+
+				console.log(saved_room);
+
+				if (saved_room) {
+					const saved_messages = await ChatMessage.find(
+						{ room: saved_room._id },
+						{ sort: { createdAt: -1 } },
+					);
+
+					const msg = {
+						_id: saved_room._id,
+						roomType: saved_room.roomType,
+						participants: saved_room.participants,
+						lastMessage: saved_messages[0],
+					};
+
+					all_chatrooms.push(msg);
+				}
+			}
+
+			return res.status(200).send(all_chatrooms);
+		}
+
+		return res.status(404).json({ message: 'No valid entry found for given id.' });
 	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ error });

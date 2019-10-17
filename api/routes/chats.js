@@ -31,7 +31,7 @@ const upload = multer({
 });
 
 //get all chats
-router.get('/', checkAuth, ChatController.get_all_messages);
+router.get('/messages', checkAuth, ChatController.get_msgs_of_room);
 //create chat
 router.post('/', checkAuth, upload.array('chatImage'), ChatController.save_chat);
 //get photo by media id

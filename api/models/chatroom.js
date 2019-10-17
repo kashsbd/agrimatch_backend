@@ -9,7 +9,7 @@ const chatRoomSchema = new Schema(
 	{
 		_id: { type: Schema.Types.ObjectId },
 
-		roomType: String,
+		roomType: String, // may be one of SINGLE, GROUP
 
 		participants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 	},

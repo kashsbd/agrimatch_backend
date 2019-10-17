@@ -22,6 +22,8 @@ const messageSchema = new Schema(
 		loc: { type: Schema.Types.Point },
 
 		seenBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+
+		isDeleted: { type: Schema.Types.Boolean, default: false },
 	},
 	{
 		timestamps: true,
