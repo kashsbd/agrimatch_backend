@@ -23,13 +23,13 @@ exports.save_chat = async (req, res) => {
 	let room_id = roomId;
 
 	//init chat message model
-	const message_model = new ChatMessage({ _id: new mongoose.Types.ObjectId() });
+	let message_model = new ChatMessage({ _id: new mongoose.Types.ObjectId() });
 	message_model.sender = fromSenderId;
 	message_model.seenBy.push(fromSenderId);
 
 	//for text message
 	if (text && text.trim().length > 0) {
-		message_model.text = text;
+		message_model.message = text;
 	}
 
 	//for chat media
@@ -93,7 +93,7 @@ exports.save_chat = async (req, res) => {
 			let chatRoom = await ChatRoom.findById(roomId).exec();
 
 			if (chatRoom) {
-				room_id = roomId;
+				room_id = chatRoom._id;
 			}
 		} else {
 			const saved_rooms = await ChatRoom.find({
@@ -127,7 +127,7 @@ exports.save_chat = async (req, res) => {
 		}
 
 		if (room_id) {
-			message_model.room = roomId;
+			message_model.room = room_id;
 			await message_model.save();
 
 			gifted_msg = {
@@ -154,13 +154,8 @@ exports.save_chat = async (req, res) => {
 exports.get_msgs_of_room = async (req, res) => {
 	const { toReceiverId, fromSenderId, roomType, roomId, page } = req.query;
 
-	const options = {
-		sort: { createdAt: -1 },
-		select: '-__v',
-		populate: [{ path: 'sender', select: 'name' }],
-		populate: [{ path: 'media', select: 'name contentType' }],
-		page: page,
-	};
+	const skipValue = 10 * (page - 1);
+	const limitValue = 10;
 
 	let room_id = roomId;
 
@@ -179,14 +174,29 @@ exports.get_msgs_of_room = async (req, res) => {
 
 		// same as above
 		if (room_id !== 'undefined') {
-			let rnMessages = await ChatMessage.paginate({ room: room_id }, options);
+			let rnMessages = await ChatMessage.find({ room: room_id })
+				.populate('sender', 'name')
+				.populate('media', 'name contentType')
+				.skip(skipValue)
+				.limit(limitValue)
+				.sort('-createdAt');
 
 			let messages = JSON.parse(JSON.stringify(rnMessages));
 
-			const msg_length = messages.doc.length;
+			const msg_length = messages.length;
 
 			for (let i = 0; i < msg_length; i++) {
-				console.log(messages.docs[i]);
+				messages[i] = {
+					_id: messages[i]._id,
+					text: messages[i].message,
+					media: messages[i].media,
+					location: messages[i].loc,
+					createdAt: messages[i].createdAt,
+					user: { _id: messages[i].sender._id, name: messages[i].sender.name },
+					meta: { room_id: messages[i].room, toReceiverId },
+				};
+
+				gifted_msgs.push(messages[i]);
 			}
 		}
 
@@ -197,47 +207,24 @@ exports.get_msgs_of_room = async (req, res) => {
 	}
 };
 
-exports.get_messages = async (req, res) => {
-	const { conId, toReceiverId, fromSenderId } = req.body;
-
-	const page = req.query.page || 1;
-
-	let options = {
-		sort: { createdAt: -1 },
-		select: '-__v',
-		populate: [{ path: 'user', select: 'firstName lastName' }],
-		page: page,
-	};
-
-	let conversation;
+exports.notify_chat = async (req, res) => {
+	const { userId, msgId } = req.body;
 
 	try {
-		if (conId) {
-			conversation = await Conversation.findById(conId);
-		} else {
-			const saved_rooms = await Conversation.find({
-				participants: { $all: [toReceiverId, fromSenderId] },
-			});
-			conversation = saved_rooms[0];
-		}
+		let chat_message = await ChatMessage.findById(msgId).exec();
 
-		if (conversation) {
-			const message_ids = conversation.messages;
-			let rnMessages = await ChatMessage.paginate({ _id: { $in: message_ids } }, options);
+		if (chat_message) {
+			const seen_message = chat_message.seenBy.includes(userId);
 
-			let messages = JSON.parse(JSON.stringify(rnMessages));
-
-			for (let i = 0; i < messages.docs.length; i++) {
-				messages.docs[i].user = {
-					_id: messages.docs[i].user._id,
-					name: messages.docs[i].user.firstName + ' ' + messages.docs[i].user.lastName,
-				};
+			if (!seen_message) {
+				chat_message.seenBy.push(userId);
+				await chat_message.save();
 			}
 
-			return res.status(200).send(messages);
+			return res.status(200).json({ message: 'OK' });
 		}
 
-		return res.status(404).json({ message: 'No valid entry found for given conversation id.' });
+		return res.status(404).json({ message: 'No valid entry found for given id.' });
 	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ error });

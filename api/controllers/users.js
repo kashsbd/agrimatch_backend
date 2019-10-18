@@ -226,12 +226,9 @@ exports.get_all_chatrooms = async (req, res) => {
 					.populate('participants', 'name')
 					.exec();
 
-				console.log(saved_room);
-
 				if (saved_room) {
-					const saved_messages = await ChatMessage.find(
-						{ room: saved_room._id },
-						{ sort: { createdAt: -1 } },
+					const saved_messages = await ChatMessage.find({ room: saved_room._id }).sort(
+						'-createdAt',
 					);
 
 					const msg = {
