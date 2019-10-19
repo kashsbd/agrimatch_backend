@@ -8,17 +8,17 @@ const ChatMessage = require('../models/message');
 const Media = require('../models/media');
 const User = require('../models/user');
 
-const { CHAT_URL } = require('../config/config');
+const { CHAT_URL, SERVER_URL } = require('../config/config');
 const { getPhotoQuality } = require('../utils/calculate-photo-quality');
 
 exports.save_chat = async (req, res) => {
 	const chat_socket = req.chat_socket;
 
-	const chatPicFile = req.file;
+	const chatMediaFile = req.file;
 
 	const { fromSenderId, toReceiverId, text, locationData, roomId, roomType } = req.body;
 
-	let gifted_msg;
+	let gifted_msg = {};
 
 	let room_id = roomId;
 
@@ -30,39 +30,40 @@ exports.save_chat = async (req, res) => {
 	//for text message
 	if (text && text.trim().length > 0) {
 		message_model.message = text;
+
+		gifted_msg['text'] = text;
 	}
 
 	//for chat media
-	if (chatPicFile) {
+	if (chatMediaFile) {
 		//init media model
 		const media_model = new Media({
 			_id: new mongoose.Types.ObjectId(),
-			type: 'CHAT-PIC',
 		});
 		//check if it is image
-		if (chatPicFile.mimetype.startsWith('image/')) {
-			if (chatPicFile.mimetype === 'image/gif') {
-				const gif = await sharp(chatPicFile.path).metadata();
+		if (chatMediaFile.mimetype.startsWith('image/')) {
+			if (chatMediaFile.mimetype === 'image/gif') {
+				const gif = await sharp(chatMediaFile.path).metadata();
 				//get gif metadata
 				media_model.width = gif.width;
 				media_model.height = gif.height;
-				media_model.contentType = chatPicFile.mimetype;
-				media_model.name = chatPicFile.filename;
+				media_model.contentType = chatMediaFile.mimetype;
+				media_model.name = chatMediaFile.filename;
 			} else {
 				const imageName =
-					Date.now() + '_compressed_' + chatPicFile.originalname.split('.')[0] + '.jpeg';
+					Date.now() + '_compressed_' + chatMediaFile.originalname.split('.')[0] + '.jpeg';
 				const absolutePath = CHAT_URL + imageName;
-				const pic = await sharp(chatPicFile.path)
+				const pic = await sharp(chatMediaFile.path)
 					.resize()
-					.jpeg({ quality: getPhotoQuality(chatPicFile.size) })
+					.jpeg({ quality: getPhotoQuality(chatMediaFile.size) })
 					.toFile(absolutePath);
 				//get image metadata
 				media_model.width = pic.width;
 				media_model.height = pic.height;
-				media_model.contentType = chatPicFile.mimetype;
+				media_model.contentType = chatMediaFile.mimetype;
 				media_model.name = imageName;
 				//finally delete original file
-				fs.unlink(chatPicFile.path, err => {
+				fs.unlink(chatMediaFile.path, err => {
 					if (err) console.log("Can't delete original file.");
 				});
 			}
@@ -70,19 +71,40 @@ exports.save_chat = async (req, res) => {
 			//finally save media model and push media id to chat model
 			const rnMedia = await media_model.save();
 			message_model.media = rnMedia._id;
+
+			gifted_msg['image'] = SERVER_URL + 'chats/media/' + rnMedia._id + '/pic';
+		} else if (chatMediaFile.mimetype.startsWith('audio/')) {
+			const audioName = Date.now() + '-' + chatMediaFile.originalname.split('.')[0] + '.3gp';
+
+			//get audio metadata
+			media_model.width = undefined;
+			media_model.height = undefined;
+			media_model.contentType = chatMediaFile.mimetype;
+			media_model.name = audioName;
+
+			const rnMedia = await media_model.save();
+			message_model.media = rnMedia._id;
+
+			gifted_msg['audio'] = SERVER_URL + 'chats/media/' + rnMedia._id + '/audio';
 		}
 	}
 
 	//for event location
 	if (locationData) {
 		const location = JSON.parse(locationData);
+
 		if (location) {
+			const lng = parseFloat(location.longitude);
+			const lat = parseFloat(location.latitude);
+
 			const loc_obj = {
 				type: 'Point',
-				coordinates: [parseFloat(location.longitude), parseFloat(location.latitude)],
+				coordinates: [lng, lat],
 			};
 
 			message_model.loc = loc_obj;
+
+			gifted_msg['location'] = { latitude: lat, longitude: lng };
 		}
 	}
 
@@ -128,23 +150,18 @@ exports.save_chat = async (req, res) => {
 
 		if (room_id) {
 			message_model.room = room_id;
-			await message_model.save();
+			const { _id, createdAt } = await message_model.save();
 
-			gifted_msg = {
-				_id: message_model._id,
-				text: message_model.message,
-				media: message_model.media,
-				location: message_model.loc,
-				createdAt: message_model.createdAt,
-				user: { _id: fromSender._id, name: fromSender.name },
-				meta: { room_id, toReceiverId },
-			};
+			gifted_msg['_id'] = _id;
+			gifted_msg['createdAt'] = createdAt;
+			gifted_msg['user'] = { _id: fromSender._id, name: fromSender.name };
+			gifted_msg['meta'] = { room_id, toReceiverId };
 		}
 
 		//emits chat message  to chat_socket subscriber
 		chat_socket.emit('chat::created', gifted_msg);
 
-		return res.status(201).send(message_model);
+		return res.status(201).send(gifted_msg);
 	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ error });
@@ -186,15 +203,35 @@ exports.get_msgs_of_room = async (req, res) => {
 			const msg_length = messages.length;
 
 			for (let i = 0; i < msg_length; i++) {
+				const { _id, message, media, loc, createdAt, sender, room } = messages[i];
+
 				messages[i] = {
-					_id: messages[i]._id,
-					text: messages[i].message,
-					media: messages[i].media,
-					location: messages[i].loc,
-					createdAt: messages[i].createdAt,
-					user: { _id: messages[i].sender._id, name: messages[i].sender.name },
-					meta: { room_id: messages[i].room, toReceiverId },
+					_id,
+					createdAt,
+					user: {
+						_id: sender._id,
+						name: sender.name,
+					},
+					meta: { room_id: room, toReceiverId },
 				};
+
+				if (message) {
+					messages[i]['text'] = message;
+				}
+
+				if (media) {
+					if (media.contentType.startsWith('image/')) {
+						messages[i]['image'] = SERVER_URL + 'chats/media/' + media._id + '/pic';
+					} else if (media.contentType.startsWith('audio/')) {
+						messages[i]['audio'] = SERVER_URL + 'chats/media/' + media._id + '/audio';
+					}
+				}
+
+				if (loc) {
+					const coords = loc.coordinates;
+
+					messages[i]['location'] = { latitude: coords[1], longitude: coords[0] };
+				}
 
 				gifted_msgs.push(messages[i]);
 			}
@@ -231,4 +268,31 @@ exports.notify_chat = async (req, res) => {
 	}
 };
 
-exports.get_photo = async (req, res) => {};
+exports.get_photo = async (req, res) => {
+	const mediaId = req.params.id;
+
+	try {
+		const media = await Media.findById(mediaId).exec();
+
+		if (media) {
+			const mediaUrl = CHAT_URL + media.name;
+
+			try {
+				const file = await readFilePromise(mediaUrl);
+
+				return res.status(200).send(file);
+			} catch (error) {
+				return res.status(404).json({
+					message: 'No such file',
+				});
+			}
+		} else {
+			return res.status(404).json({
+				message: 'No valid entry found for provided ID',
+			});
+		}
+	} catch (error) {
+		console.log(error);
+		return res.status(500).send(error);
+	}
+};

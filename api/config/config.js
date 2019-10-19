@@ -2,7 +2,7 @@ const os = require('os');
 
 const mongo_local_path = 'mongodb://localhost:27017/Agrimatch';
 
-const mongo_atlas_path = 'mongodb://kash:kash123@localhost:27017/Agrimatch';
+const mongo_server_path = 'mongodb://kash:kash123@localhost:27017/Agrimatch';
 
 const MONGO_PATH = mongo_local_path;
 

@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
 
 const fileFilter = function(req, file, cb) {
 	const mimeType = file.mimetype;
-	if (mimeType.startsWith('image/')) {
+	if (mimeType.startsWith('image/') || mimeType.startsWith('audio/')) {
 		return cb(null, true);
 	} else return cb(new Error(mimeType + ' file types are not allowed.'), false);
 };
@@ -33,7 +33,7 @@ const upload = multer({
 //get all chats
 router.get('/messages', checkAuth, ChatController.get_msgs_of_room);
 //create chat
-router.post('/', checkAuth, upload.array('chatImage'), ChatController.save_chat);
+router.post('/', checkAuth, upload.single('media'), ChatController.save_chat);
 //
 router.post('/notifyChatMessage', checkAuth, ChatController.notify_chat);
 //get photo by media id

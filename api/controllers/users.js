@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const sharp = require('sharp');
-const _ = require('lodash');
 const readFilePromise = require('fs-readfile-promise');
 
 const { JWT_KEY, PROPIC_URL } = require('../config/config');

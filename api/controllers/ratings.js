@@ -6,8 +6,6 @@ const Media = require('../models/media');
 
 const readFilePromise = require('fs-readfile-promise');
 
-const { FEEDBACK_URL } = require('../config/config');
-
 exports.save_rating = async (req, res) => {
 	const { fromUser, toUser, value, feedback } = req.body;
 
@@ -34,7 +32,6 @@ exports.save_rating = async (req, res) => {
 					//init media model
 					const media_model = new Media({
 						_id: new mongoose.Types.ObjectId(),
-						type: 'FEEDBACK',
 					});
 					//check if it is image
 					if (f.mimetype.startsWith('audio/')) {
