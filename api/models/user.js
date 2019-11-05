@@ -6,10 +6,10 @@ const userSchema = new Schema(
 	{
 		_id: Schema.Types.ObjectId,
 		//crendential info
-		email: {
+		email: String,
+		phno: {
 			type: String,
 			required: true,
-			match: /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/,
 		},
 		password: {
 			type: String,
@@ -18,7 +18,6 @@ const userSchema = new Schema(
 		//detail info
 		userType: String, // may be one of FARMER and MIDDLEMAN
 		name: String,
-		phno: String,
 		//profile pic info
 		profile: { type: Schema.Types.ObjectId, ref: 'Media' },
 		//GPA Cert No: only save if userType is FARMER

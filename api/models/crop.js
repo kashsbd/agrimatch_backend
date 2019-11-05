@@ -6,24 +6,26 @@ const User = require('./user');
 const Media = require('./media');
 
 const cropSchema = new Schema(
-    {
-        _id: { type: Schema.Types.ObjectId },
+	{
+		_id: { type: Schema.Types.ObjectId },
 
-        user: { type: Schema.Types.ObjectId, ref: 'User' },
+		user: { type: Schema.Types.ObjectId, ref: 'User' },
 
-        cropType: String,
+		cropCategory: String,
 
-        quantity: String,
+		cropType: String,
 
-        isAvailable: { type: Boolean, default: true }, // is available to users or not
+		quantity: String,
 
-        media: { type: Schema.Types.ObjectId, ref: 'Media' },
-    },
-    {
-        timestamps: true,
-    }
+		isAvailable: { type: Boolean, default: true }, // is available to users or not
+
+		media: { type: Schema.Types.ObjectId, ref: 'Media' },
+	},
+	{
+		timestamps: true,
+	},
 );
 
 cropSchema.plugin(mongoosePaginate);
 
-module.exports = mongoose.model('Crop', cropSchema);;
+module.exports = mongoose.model('Crop', cropSchema);

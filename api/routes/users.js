@@ -35,7 +35,7 @@ const cpUpload = upload.fields([{ name: 'proPic', maxCount: 1 }, { name: 'gpaCer
 
 router.get('/test', UserController.test);
 
-router.post('/checkEmail', UserController.check_email);
+router.post('/checkPhNo', UserController.check_ph_no);
 
 router.post('/signup', cpUpload, UserController.user_signup);
 

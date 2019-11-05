@@ -57,7 +57,7 @@ exports.get_crop_by_id = async (req, res) => {
 exports.create_crop = async (req, res, next) => {
 	const files = req.files || [];
 
-	const { userId, cropType, quantity } = req.body;
+	const { userId, cropType, quantity, cropCategory } = req.body;
 
 	//init crop model
 	const crop_model = new Crop({
@@ -65,6 +65,7 @@ exports.create_crop = async (req, res, next) => {
 		user: userId,
 		cropType,
 		quantity,
+		cropCategory,
 	});
 
 	//for crop media

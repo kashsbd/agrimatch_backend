@@ -30,14 +30,14 @@ exports.get_user_count = async (req, res) => {
 	}
 };
 
-exports.check_email = async (req, res) => {
-	const { email, userType } = req.body;
+exports.check_ph_no = async (req, res) => {
+	const { phno, userType } = req.body;
 
 	try {
-		const users = await User.find({ email, userType }).exec();
+		const users = await User.find({ phno, userType }).exec();
 
 		if (users && users.length >= 1) {
-			return res.status(409).json({ message: 'Mail exists' });
+			return res.status(409).json({ message: 'Phone number exists.' });
 		}
 
 		return res.status(200).json({ message: 'OK' });
@@ -61,10 +61,10 @@ exports.user_signup = async (req, res) => {
 	// init user model
 	const user = new User({
 		_id: new mongoose.Types.ObjectId(),
-		email,
+		phno,
 		password,
 		name,
-		phno,
+		email,
 		userType,
 	});
 
@@ -127,7 +127,7 @@ exports.user_signup = async (req, res) => {
 		//generate token for new user
 		const token = jwt.sign(
 			{
-				email: result.email,
+				phno: result.phno,
 				userId: result._id,
 			},
 			JWT_KEY,
@@ -146,10 +146,10 @@ exports.user_signup = async (req, res) => {
 };
 
 exports.user_login = async (req, res, next) => {
-	const { email, userType, password } = req.body;
+	const { phno, userType, password } = req.body;
 
 	try {
-		const users = await User.find({ email, password, userType }).exec();
+		const users = await User.find({ phno, password, userType }).exec();
 
 		if (users && users.length < 1) {
 			return res.status(401).json({ message: 'Auth failed' });
@@ -158,7 +158,7 @@ exports.user_login = async (req, res, next) => {
 		// generate token for logged user
 		const token = jwt.sign(
 			{
-				email: users[0].email,
+				phno: users[0].phno,
 				userId: users[0]._id,
 			},
 			JWT_KEY,
