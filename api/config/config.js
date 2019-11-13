@@ -6,7 +6,7 @@ const mongo_server_path = 'mongodb://kash:kash123@localhost:27017/Agrimatch';
 
 const MONGO_PATH = mongo_local_path;
 
-const local = 'http://192.168.8.116:3000/';
+const local = 'http://192.168.1.26:3000/';
 
 const server = 'http://104.197.224.155:3000/';
 

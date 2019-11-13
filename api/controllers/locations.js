@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const Location = require('../models/location');
 
 exports.get_near_me = async (req, res) => {
-	const { userType, lng, lat } = req.query;
+	const { userType, lng, lat, userId } = req.query;
 
 	const locQuery = {
 		$near: {
@@ -24,7 +24,12 @@ exports.get_near_me = async (req, res) => {
 			.populate('user', 'name userType phno profile rateCount totalRateValue', 'User', { userType })
 			.exec();
 
-		locations = locations.filter(loc => loc.user !== null);
+		locations = locations.filter(loc => {
+			if (loc.user && loc.user._id != userId) {
+				return true;
+			}
+			return false;
+		});
 
 		return res.status(200).send(locations);
 	} catch (error) {

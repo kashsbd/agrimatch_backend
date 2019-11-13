@@ -12,6 +12,7 @@ const { getPhotoQuality } = require('../utils/calculate-photo-quality');
 exports.get_all_crops = async (req, res) => {
 	const page = req.query.page || 1;
 	const user = req.query.user;
+	const cropType = req.query.cropType;
 	// limit is 10 as default  in mongoose pagination
 	const options = {
 		sort: { createdAt: -1 },
@@ -23,8 +24,10 @@ exports.get_all_crops = async (req, res) => {
 		page: page,
 	};
 
+	const query = cropType === 'All' ? { isAvailable: true, user } : { isAvailable: true, user, cropType };
+
 	try {
-		const result = await Crop.paginate({ isAvailable: true, user }, options);
+		const result = await Crop.paginate(query, options);
 		return res.status(200).send(result);
 	} catch (error) {
 		console.log(error);
