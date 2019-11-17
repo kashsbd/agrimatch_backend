@@ -37,3 +37,32 @@ exports.get_near_me = async (req, res) => {
 		return res.status(500).json({ error });
 	}
 };
+
+exports.notify_loc_change = async (req, res) => {
+	const { user, lng, lat } = req.body;
+
+	try {
+		const locations = await Location.find({ user }).exec();
+
+		if (locations && locations.length > 0) {
+			const loc_id = locations[0]._id;
+
+			if (lng !== undefined && lat !== undefined) {
+				let selected_location = await Location.findById(loc_id).exec();
+
+				const location = { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] };
+
+				selected_location.location = location;
+
+				await selected_location.save();
+
+				return res.status(200).json({ msg: 'Okay' });
+			}
+		}
+
+		return res.status(404).json({ msg: 'No entry found for given id.' });
+	} catch (error) {
+		console.log(error);
+		return res.status(500).json({ error });
+	}
+};

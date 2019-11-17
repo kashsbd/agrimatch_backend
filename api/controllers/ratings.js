@@ -9,8 +9,6 @@ const readFilePromise = require('fs-readfile-promise');
 exports.save_rating = async (req, res) => {
 	const { fromUser, toUser, value, feedback } = req.body;
 
-	console.log(req.body);
-
 	const files = req.files || [];
 
 	try {
