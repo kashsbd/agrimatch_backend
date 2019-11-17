@@ -4,13 +4,13 @@ const mongo_local_path = 'mongodb://localhost:27017/Agrimatch';
 
 const mongo_server_path = 'mongodb://kash:kash123@localhost:27017/Agrimatch';
 
-const MONGO_PATH = mongo_local_path;
+const MONGO_PATH = mongo_server_path;
 
 const local = 'http://192.168.1.26:3000/';
 
 const server = 'http://104.197.224.155:3000/';
 
-const SERVER_URL = local;
+const SERVER_URL = server;
 
 const JWT_KEY = 'secure_agrimatch_key';
 
