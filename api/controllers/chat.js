@@ -16,7 +16,9 @@ exports.save_chat = async (req, res) => {
 
 	const chatMediaFile = req.file;
 
-	const { fromSenderId, toReceiverId, text, locationData, roomId, roomType } = req.body;
+	const { fromSenderId, toReceiverIds, text, locationData, roomId, roomType } = req.body;
+
+	const receiverIds = JSON.parse(toReceiverIds);
 
 	let gifted_msg = {};
 
@@ -119,7 +121,8 @@ exports.save_chat = async (req, res) => {
 			}
 		} else {
 			const saved_rooms = await ChatRoom.find({
-				participants: { $all: [fromSenderId, toReceiverId] },
+				participants: { $all: [fromSenderId, ...receiverIds] },
+				roomType,
 			});
 
 			const room_one = saved_rooms[0];
@@ -131,7 +134,11 @@ exports.save_chat = async (req, res) => {
 				let room_model = new ChatRoom({ _id: new mongoose.Types.ObjectId() });
 
 				room_model.participants.push(fromSenderId);
-				room_model.participants.push(toReceiverId);
+
+				for (let i = 0; i < receiverIds.length; i++) {
+					room_model.participants.push(receiverIds[i]);
+				}
+
 				room_model.roomType = roomType;
 
 				const saved_room = await room_model.save();
@@ -139,10 +146,12 @@ exports.save_chat = async (req, res) => {
 				fromSender.chatRooms.push(saved_room._id);
 				await fromSender.save();
 
-				let toReceiver = await User.findById(toReceiverId).exec();
+				for (let j = 0; j < receiverIds.length; j++) {
+					let toReceiver = await User.findById(receiverIds[j]).exec();
 
-				toReceiver.chatRooms.push(saved_room._id);
-				await toReceiver.save();
+					toReceiver.chatRooms.push(saved_room._id);
+					await toReceiver.save();
+				}
 
 				room_id = saved_room._id;
 			}
@@ -155,7 +164,7 @@ exports.save_chat = async (req, res) => {
 			gifted_msg['_id'] = _id;
 			gifted_msg['createdAt'] = createdAt;
 			gifted_msg['user'] = { _id: fromSender._id, name: fromSender.name };
-			gifted_msg['meta'] = { room_id, toReceiverId };
+			gifted_msg['meta'] = { room_id, toReceiverIds: receiverIds };
 		}
 
 		//emits chat message  to chat_socket subscriber
@@ -169,7 +178,9 @@ exports.save_chat = async (req, res) => {
 };
 
 exports.get_msgs_of_room = async (req, res) => {
-	const { toReceiverId, fromSenderId, roomType, roomId, page } = req.query;
+	const { toReceiverIds, fromSenderId, roomType, roomId, page } = req.query;
+
+	const receiverIds = JSON.parse(toReceiverIds);
 
 	const skipValue = 10 * (page - 1);
 	const limitValue = 10;
@@ -182,7 +193,7 @@ exports.get_msgs_of_room = async (req, res) => {
 		// have to check with string undefined coz roomId is string undefined in req query
 		if (room_id === 'undefined') {
 			const saved_rooms = await ChatRoom.find({
-				participants: { $all: [toReceiverId, fromSenderId] },
+				participants: { $all: [...receiverIds, fromSenderId] },
 				roomType,
 			});
 
@@ -212,7 +223,7 @@ exports.get_msgs_of_room = async (req, res) => {
 						_id: sender._id,
 						name: sender.name,
 					},
-					meta: { room_id: room, toReceiverId },
+					meta: { room_id: room, toReceiverIds: receiverIds },
 				};
 
 				if (message) {

@@ -5,6 +5,9 @@ const Location = require('../models/location');
 exports.get_near_me = async (req, res) => {
 	const { userType, lng, lat, userId } = req.query;
 
+	let singleUsers = [];
+	let groupUsers = [];
+
 	const locQuery = {
 		$near: {
 			$maxDistance: 16093.4, // in meter ** 16093.4 metre = 10 mile
@@ -22,16 +25,26 @@ exports.get_near_me = async (req, res) => {
 	try {
 		let locations = await Location.find(query)
 			.populate('user', 'name userType phno profile rateCount totalRateValue', 'User', { userType })
+			.populate('chatRoom', 'roomName participants')
 			.exec();
 
-		locations = locations.filter(loc => {
-			if (loc.user && loc.user._id != userId) {
-				return true;
-			}
-			return false;
-		});
+		const locLength = locations.length;
 
-		return res.status(200).send(locations);
+		for (let i = 0; i < locLength; i++) {
+			if (locations[i].chatType === 'SINGLE') {
+				if (locations[i].user && locations[i].user._id != userId) {
+					singleUsers.push(locations[i]);
+				}
+			} else {
+				groupUsers.push(locations[i]);
+			}
+		}
+
+		const data = { singleUsers, groupUsers };
+
+		console.log(data);
+
+		return res.status(200).send(data);
 	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ error });

@@ -4,12 +4,15 @@ const mongoosePaginate = require('mongoose-paginate');
 const Schema = mongoose.Schema;
 
 const User = require('./user');
+const ChatRoom = require('./chatroom');
 
 const locationSchema = new Schema(
 	{
 		_id: { type: Schema.Types.ObjectId },
 
 		user: { type: Schema.Types.ObjectId, ref: 'User' },
+
+		chatRoom: { type: Schema.Types.ObjectId, ref: 'ChatRoom' },
 
 		chatType: String, // may be one of SINGLE, GROUP
 

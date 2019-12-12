@@ -10,6 +10,7 @@ const cropRouter = require('./api/routes/crops');
 const locationRouter = require('./api/routes/locations');
 const ratingRouter = require('./api/routes/ratings');
 const chatRouter = require('./api/routes/chats');
+const chatRoomRouter = require('./api/routes/chatroom');
 
 //db config
 mongoose.Promise = global.Promise;
@@ -56,6 +57,7 @@ app.use('/crops', cropRouter);
 app.use('/locations', locationRouter);
 app.use('/ratings', ratingRouter);
 app.use('/chats', chatRouter);
+app.use('/chatrooms', chatRoomRouter);
 
 app.use((req, res, next) => {
 	const error = new Error('Not found');

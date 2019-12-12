@@ -1,37 +1,24 @@
-const llFromDistance = function(latitude, longitude, distance, bearing) {
-	// taken from: https://stackoverflow.com/a/46410871/13549
-	// distance in KM, bearing in degrees
+const getNewLngLat = (oldLng, oldLat) => {
+	const earth = 6378.137; //radius of the earth in kilometer
+	const pi = Math.PI;
+	const cos = Math.cos;
 
-	const R = 6378.1; // Radius of the Earth
-	const brng = (bearing * Math.PI) / 180; // Convert bearing to radian
-	let lat = (latitude * Math.PI) / 180; // Current coords to radians
-	let lon = (longitude * Math.PI) / 180;
+	const meter = Math.floor(Math.random() * (200 - 150 + 1) + 150);
 
-	// Do the math magic
-	lat = Math.asin(
-		Math.sin(lat) * Math.cos(distance / R) + Math.cos(lat) * Math.sin(distance / R) * Math.cos(brng),
-	);
+	const lng_m = 1 / (((2 * pi) / 360) * earth) / 1000; //1 meter in degree for longitude
 
-	lon += Math.atan2(
-		Math.sin(brng) * Math.sin(distance / R) * Math.cos(lat),
-		Math.cos(distance / R) - Math.sin(lat) * Math.sin(lat),
-	);
+	const lat_m = 1 / (((2 * pi) / 360) * earth) / 1000; //1 meter in degree for latitude
 
-	// Coords back to degrees and return
-	return [(lat * 180) / Math.PI, (lon * 180) / Math.PI];
+	const new_longitude = oldLng + (meter * lng_m) / cos(oldLat * (pi / 180));
+
+	const new_latitude = oldLat + meter * lat_m;
+
+	return {
+		lng: parseFloat(new_longitude),
+		lat: parseFloat(new_latitude),
+	};
 };
 
-const pointsOnMapCircle = function(latitude, longitude, distance, numPoints) {
-	const points = [];
-	for (let i = 0; i <= numPoints - 1; i++) {
-		const bearing = Math.round((360 / numPoints) * i);
-		const newPoints = llFromDistance(latitude, longitude, distance, bearing);
-		points.push(newPoints);
-	}
-	return points;
-};
-
-exports = {
-	llFromDistance,
-	pointsOnMapCircle,
+module.exports = {
+	getNewLngLat,
 };

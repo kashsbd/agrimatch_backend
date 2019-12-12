@@ -12,6 +12,8 @@ const chatRoomSchema = new Schema(
 		roomType: String, // may be one of SINGLE, GROUP
 
 		participants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+
+		roomName: String,
 	},
 	{
 		timestamps: true,

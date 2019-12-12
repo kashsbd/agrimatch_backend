@@ -234,12 +234,15 @@ exports.get_all_chatrooms = async (req, res) => {
 						_id: saved_room._id,
 						roomType: saved_room.roomType,
 						participants: saved_room.participants,
-						lastMessage: saved_messages[0],
+						lastMessage: saved_messages[0] ? saved_messages[0] : '',
+						roomName: saved_room.roomName,
 					};
 
 					all_chatrooms.push(msg);
 				}
 			}
+
+			console.log(all_chatrooms);
 
 			return res.status(200).send(all_chatrooms);
 		}
