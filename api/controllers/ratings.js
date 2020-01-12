@@ -73,6 +73,8 @@ exports.save_rating = async (req, res) => {
 exports.action = async (req, res) => {
 	const { status, notiId, ratingId } = req.body;
 
+	const noties_socket = req.noties_socket;
+
 	try {
 		let saved_noti = await Notification.findById(notiId).exec();
 		if (saved_noti) {
