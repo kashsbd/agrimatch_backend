@@ -18,6 +18,8 @@ const ratingSchema = new Schema(
 		feedback: String,
 
 		feedbackAudio: { type: Schema.Types.ObjectId, ref: 'Media' },
+
+		status: { type: String, default: 'PENDING' },
 	},
 	{
 		timestamps: true,

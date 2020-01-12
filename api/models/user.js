@@ -32,6 +32,7 @@ const userSchema = new Schema(
 
 		//for chatting
 		chatRooms: [{ type: Schema.Types.ObjectId, ref: 'ChatRoom' }],
+
 	},
 	{
 		timestamps: true,

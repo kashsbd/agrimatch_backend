@@ -7,16 +7,16 @@ const { PROPIC_URL, GPA_CERT_URL } = require('../config/config');
 const checkAuth = require('../middlewares/check-auth');
 
 const storage = multer.diskStorage({
-	destination: function(req, file, cb) {
+	destination: function (req, file, cb) {
 		const picPath = file.fieldname === 'proPic' ? PROPIC_URL : GPA_CERT_URL;
 		cb(null, picPath);
 	},
-	filename: function(req, file, cb) {
+	filename: function (req, file, cb) {
 		cb(null, Date.now() + '-' + file.originalname);
 	},
 });
 
-const fileFilter = function(req, file, cb) {
+const fileFilter = function (req, file, cb) {
 	const mimeType = file.mimetype;
 	if (mimeType.startsWith('image/')) {
 		return cb(null, true);
@@ -47,5 +47,8 @@ router.get('/getUserCount', checkAuth, UserController.get_user_count);
 
 //for chat rooms
 router.get('/:id/chatrooms', checkAuth, UserController.get_all_chatrooms);
+
+//for notis
+router.get('/:id/notis', checkAuth, UserController.get_all_notis);
 
 module.exports = router;

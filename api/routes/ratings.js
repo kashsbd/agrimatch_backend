@@ -7,15 +7,15 @@ const checkAuth = require('../middlewares/check-auth');
 const { FEEDBACK_URL } = require('../config/config');
 
 const storage = multer.diskStorage({
-	destination: function(req, file, cb) {
+	destination: function (req, file, cb) {
 		cb(null, FEEDBACK_URL);
 	},
-	filename: function(req, file, cb) {
+	filename: function (req, file, cb) {
 		cb(null, Date.now() + '-' + file.originalname);
 	},
 });
 
-const fileFilter = function(req, file, cb) {
+const fileFilter = function (req, file, cb) {
 	const mimeType = file.mimetype;
 	if (mimeType.startsWith('audio/')) {
 		return cb(null, true);
@@ -32,5 +32,7 @@ const upload = multer({
 
 //save rating
 router.post('/', checkAuth, upload.array('feedbackAudio'), RatingController.save_rating);
+//for action
+router.post('/action', checkAuth, RatingController.action);
 
 module.exports = router;

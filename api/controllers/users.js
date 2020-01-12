@@ -10,6 +10,8 @@ const Media = require('../models/media');
 const Location = require('../models/location');
 const ChatRoom = require('../models/chatroom');
 const ChatMessage = require('../models/message');
+const Notification = require('../models/notification');
+const Rating = require('../models/rating');
 
 exports.test = (req, res) => {
 	res.status(200).json({
@@ -220,7 +222,7 @@ exports.get_all_chatrooms = async (req, res) => {
 		if (user) {
 			const rooms = user.chatRooms;
 
-			for (let i = rooms.length; i--; ) {
+			for (let i = rooms.length; i--;) {
 				const saved_room = await ChatRoom.findById(rooms[i])
 					.populate('participants', 'name')
 					.exec();
@@ -242,8 +244,6 @@ exports.get_all_chatrooms = async (req, res) => {
 				}
 			}
 
-			console.log(all_chatrooms);
-
 			return res.status(200).send(all_chatrooms);
 		}
 
@@ -253,3 +253,33 @@ exports.get_all_chatrooms = async (req, res) => {
 		return res.status(500).json({ error });
 	}
 };
+
+exports.get_all_notis = async (req, res) => {
+	const { id } = req.params;
+
+	let all_notis = [];
+
+	try {
+		const notis = await Notification.find({ createdTo: id }).populate('createdBy', 'name').populate('createdTo', 'name').exec();
+
+		for (let i = 0; i < notis.length; i++) {
+
+			if (notis[i].type === 'REQUEST-TRANSACT') {
+				const saved_rating = await Rating.findById(notis[i].data).exec();
+
+				if (saved_rating.status === 'PENDING') {
+					let rnNoti = JSON.parse(JSON.stringify(notis[i]));
+
+					rnNoti.data = saved_rating;
+					all_notis.push(rnNoti);
+				}
+			}
+		}
+
+		return res.status(200).send(all_notis);
+
+	} catch (error) {
+		console.log(error);
+		return res.status(500).json({ error });
+	}
+}

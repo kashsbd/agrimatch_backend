@@ -30,7 +30,8 @@ let app = express();
 let server = require('http').Server(app);
 let io = require('socket.io')(server);
 
-const chat_socket = io.of('/all_chats').on('connection', () => {});
+const chat_socket = io.of('/all_chats').on('connection', () => { });
+const noti_socket = io.of('/all_notis').on('connection', () => { });
 
 app.use(cors());
 
@@ -38,6 +39,7 @@ app.use(cors());
 app.use((req, res, next) => {
 	//for chatting
 	req.chat_socket = chat_socket;
+	req.noties_socket = noti_socket;
 	next();
 });
 
