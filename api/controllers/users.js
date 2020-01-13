@@ -260,19 +260,17 @@ exports.get_all_notis = async (req, res) => {
 	let all_notis = [];
 
 	try {
-		const notis = await Notification.find({ createdTo: id }).populate('createdBy', 'name').populate('createdTo', 'name').exec();
+		let notis = await Notification.find({ createdTo: id }).populate('createdBy', 'name').populate('createdTo', 'name').exec();
 
 		for (let i = 0; i < notis.length; i++) {
 
-			if (notis[i].type === 'REQUEST-TRANSACT') {
-				const saved_rating = await Rating.findById(notis[i].data).exec();
+			const saved_rating = await Rating.findById(notis[i].data).exec();
 
-				if (saved_rating.status === 'PENDING') {
-					let rnNoti = JSON.parse(JSON.stringify(notis[i]));
+			if (!notis[i].isRead) {
+				let rnNoti = JSON.parse(JSON.stringify(notis[i]));
 
-					rnNoti.data = saved_rating;
-					all_notis.push(rnNoti);
-				}
+				rnNoti.data = saved_rating;
+				all_notis.push(rnNoti);
 			}
 		}
 

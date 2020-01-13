@@ -76,6 +76,13 @@ exports.action = async (req, res) => {
 	const noties_socket = req.noties_socket;
 
 	try {
+		let _noti = new Notification(
+			{
+				_id: new mongoose.Types.ObjectId(),
+				type: 'RESPONSE-TRANSACT'
+			}
+		);
+
 		let saved_noti = await Notification.findById(notiId).exec();
 		if (saved_noti) {
 			saved_noti.isRead = true;
@@ -84,14 +91,20 @@ exports.action = async (req, res) => {
 
 		let saved_rating = await Rating.findById(ratingId).exec();
 		if (saved_rating) {
+
+			_noti.createdBy = saved_rating.toUser;
+			_noti.createdTo = saved_rating.fromUser;
+			_noti.data = saved_rating._id;
+			const rnNoti = await _noti.save();
+
 			if (status === 'ALLOW') {
 				await User.update({ _id: saved_rating.toUser }, { $inc: { rateCount: 1, totalRateValue: saved_rating.value } });
-			} else {
-
 			}
 
 			saved_rating.status = status;
 			await saved_rating.save();
+
+			noties_socket.emit('noti::created', rnNoti);
 		}
 
 		return res.status(200).json({ msg: 'OK' });
