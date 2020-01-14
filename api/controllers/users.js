@@ -256,11 +256,12 @@ exports.get_all_chatrooms = async (req, res) => {
 
 exports.get_all_notis = async (req, res) => {
 	const { id } = req.params;
+	const { returnType } = req.query;
 
 	let all_notis = [];
 
 	try {
-		let notis = await Notification.find({ createdTo: id }).populate('createdBy', 'name').populate('createdTo', 'name').exec();
+		let notis = await Notification.find({ createdTo: id }).populate('createdBy', 'name').populate('createdTo', 'name').sort({ createdAt: -1 }).exec();
 
 		for (let i = 0; i < notis.length; i++) {
 
@@ -272,6 +273,11 @@ exports.get_all_notis = async (req, res) => {
 				rnNoti.data = saved_rating;
 				all_notis.push(rnNoti);
 			}
+
+			if (returnType == 'NOTI_MSG_ONLY' && saved_rating.status != 'PENDING') {
+				notis[i].isRead = true;
+				await notis[i].save();
+			}
 		}
 
 		return res.status(200).send(all_notis);
@@ -281,3 +287,4 @@ exports.get_all_notis = async (req, res) => {
 		return res.status(500).json({ error });
 	}
 }
+
