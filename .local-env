@@ -1,0 +1,5 @@
+MONGO_PATH="mongodb://mongo:rtwnbbuCyVlC48AHVjLo@containers-us-west-99.railway.app:7977"
+
+PORT=3040
+
+SERVER_URL="http://localhost:${PORT}/"

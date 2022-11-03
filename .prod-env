@@ -1,0 +1,5 @@
+MONGO_PATH=""
+
+SERVER_URL=""
+
+PORT=3040
