@@ -1,4 +1,4 @@
-MONGO_PATH="mongodb://admin:admin123@18.143.92.227:27017/agrimatch"
+MONGO_PATH="mongodb://agrimatch_user:agrimatch_user123@18.143.92.227:27017/agrimatch"
 
 SERVER_URL="https://agrimatch.digisoftmm.com/"
 
