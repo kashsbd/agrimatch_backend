@@ -1,5 +1,5 @@
 MONGO_PATH="mongodb://agrimatch_user:agrimatch_user123@18.143.92.227:27017/agrimatch"
 
-SERVER_URL="https://agrimatch.digisoftmm.com/"
+SERVER_URL="http://agrimatch.digisoftmm.com/"
 
 PORT=4040
